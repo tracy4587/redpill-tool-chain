@@ -16,7 +16,13 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
+    name: 编译 "${{matrix.platform}} ${{matrix.version}}"
+    strategy:
+      fail-fast: false
+      matrix:
+       include:
+         - platform: apollolake
+           version: 7.0.1-42218
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -24,6 +30,10 @@ jobs:
     
       - name: Chmod
         run: chmod 0755 ./redpill_tool_chain.sh
+      - name: 配置引导镜像
+        run: |
+          cp sample_user_config.json ${{matrix.platform}}_user_config.json
+          sed -i -e 's\0x0001\0x0002\g' -e 's\0x46f4\0x0002\g' -e 's\1234XXX123\0123456789\g' -e 's\XXYYXXYYXXYY\00AAAAAAAAAA\g' -e 's/00AAAAAAAAAA"/&,\n\t"mac2": "00BBBBBBBBBB",\n\t"netif_num": 2/' -e 's/"synoinfo": {},/"synoinfo": {\n\t"maxlanport": "2"\n    },/' ${{matrix.platform}}_user_config.json  
       - name: drivers
         run: ./redpill_tool_chain.sh add https://raw.githubusercontent.com/pocopico/rp-ext/main/r8152/rpext-index.json
       - name: Build docker image
